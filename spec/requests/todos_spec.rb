@@ -1,16 +1,19 @@
 require 'rails_helper'
 
-RSpec.describe "Todos", type: :request do
+RSpec.describe "Todos API", type: :request do
+  let!(:todos) {create_list(:todo,10)}
+  let(:todo_id) {todos.first.id}
+
   describe "GET /todos" do
     before { get '/todos'}
 
     it 'returns todos' do
-      expect(json).not_to_be_empty
-      expect(json.size).to_eq(10)
+      expect(json).not_to be_empty
+      expect(json.size).to eq(10)
     end
 
     it 'returns status code 200' do
-      expect(response).to_have_http_status(200)
+      expect(response).to have_http_status(200)
     end
   end
 
@@ -19,12 +22,12 @@ RSpec.describe "Todos", type: :request do
 
     context 'when the record exists' do
       it 'return the todo' do
-        expect(json).not_to_be_empty
-        expect(json['id']).to_eq(todo_id)
+        expect(json).not_to be_empty
+        expect(json['id']).to eq(todo_id)
       end
 
       it 'returns status code 200' do
-        expect(response).to_have_http_status(200)
+        expect(response).to have_http_status(200)
       end
     end
 
@@ -32,12 +35,75 @@ RSpec.describe "Todos", type: :request do
       let(:todo_id) { 100 }
 
       it 'return statue_code 404' do
-        expect(response).to_have_http_status(404)
+        expect(response).to have_http_status(404)
       end
 
       it 'returns a not found message' do
-        expect(response.body).to_match(/Couldn't find Todo/)
+        expect(response.body).to match(/Couldn't find Todo/)
       end
     end
+
+
+    describe 'POST /todos' do
+      let(:valid_attributes) {{title:"Learn Ruby", created_by:"1"}};
+
+      context 'when the request is valid' do
+        before {post '/todos',params:valid_attributes}
+
+        it 'creates a todo' do
+          expect(json['title']).to eq('Learn Ruby')
+        end
+
+        it 'returns 201 status code' do
+          expect(response).to have_http_status(201)
+        end
+      end
+
+      context 'when the request is invalid' do
+        before {post "/todos",params: {title:"Unlearn Ruby"}}
+
+        it 'returns status code 422' do
+          expect(response).to have_http_status(422)
+        end
+
+        it 'returns a validation failure message' do
+          expect(response.body).to match(/Validation failed: Created by can't be blank/)
+        end
+      end
+    end
+
+
+    describe 'PUT /todos/:id' do
+        let(:valid_attributes) {{title:"Learn Ruby on Rails"}}
+
+        context 'when the record exists' do
+          before {put "/todos/#{todo_id}", params:valid_attributes}
+
+          it 'updates the record' do
+            expect(response.body).to be_empty
+          end
+
+          it 'response status code 204' do
+            expect(response).to have_http_status(204)
+          end
+        end
+    end
+
+      # DELETE
+
+      describe 'DELETE /todos/:id' do
+          before {delete "/todos/#{todo_id}"}
+
+          it 'updates the record' do
+            expect(response.body).to be_empty
+          end
+
+          it 'response status code 204' do
+            expect(response).to have_http_status(204)
+          end
+        end
+      end
+
+      
 
 end
